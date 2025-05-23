@@ -7,7 +7,7 @@ import { storageUtils } from "./storage";
  * Represents a source for progress tracking, either an image or video
  */
 interface ProgressSource {
-  type: "image" | "video";
+  type: "image" | "video" | "livephoto";
   startTime?: number;
   duration?: number;
   element?: HTMLVideoElement;

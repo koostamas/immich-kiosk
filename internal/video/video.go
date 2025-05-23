@@ -217,7 +217,15 @@ func (v *Manager) addToQueue(id string) {
 // DownloadVideo downloads a video file and adds it to the cache
 func (v *Manager) DownloadVideo(immichAsset immich.Asset, requestConfig config.Config, deviceID string, requestURL string) {
 
-	videoID := immichAsset.ID
+	videoID := ""
+	ext := ""
+	if immichAsset.Type == immich.VideoType {
+		videoID = immichAsset.ID
+		ext = filepath.Ext(immichAsset.OriginalFileName)
+	} else {
+		videoID = immichAsset.LivePhotoVideoID
+		ext = ".mp4"
+	}
 
 	v.addToQueue(videoID)
 	defer v.removeFromQueue(videoID)
@@ -228,8 +236,6 @@ func (v *Manager) DownloadVideo(immichAsset immich.Asset, requestConfig config.C
 		log.Error("getting video", "err", videoBytesErr)
 		return
 	}
-
-	ext := filepath.Ext(immichAsset.OriginalFileName)
 
 	// Get the video filename
 	filename := videoID + ext

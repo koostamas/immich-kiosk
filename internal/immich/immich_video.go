@@ -10,6 +10,12 @@ import (
 // Returns the video data as a byte slice, the API URL used for the request, and any error encountered.
 // The video is returned in octet-stream format.
 func (a *Asset) Video() ([]byte, string, error) {
+	ID := ""
+	if a.Type == VideoType {
+		ID = a.ID
+	} else {
+		ID = a.LivePhotoVideoID
+	}
 
 	var responseBody []byte
 
@@ -21,7 +27,7 @@ func (a *Asset) Video() ([]byte, string, error) {
 	apiURL := url.URL{
 		Scheme: u.Scheme,
 		Host:   u.Host,
-		Path:   path.Join("api", "assets", a.ID, "video", "playback"),
+		Path:   path.Join("api", "assets", ID, "video", "playback"),
 	}
 
 	octetStreamHeader := map[string]string{"Accept": "application/octet-stream"}

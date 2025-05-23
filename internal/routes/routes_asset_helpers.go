@@ -288,6 +288,10 @@ func processAsset(immichAsset *immich.Asset, allowedAssetTypes []immich.AssetTyp
 			return processVideo(immichAsset, requestConfig, requestID, deviceID, requestURL, isPrefetch)
 		}
 
+		if immichAsset.LivePhotoVideoID != "" {
+			return processVideo(immichAsset, requestConfig, requestID, deviceID, requestURL, isPrefetch)
+		}
+
 		return processImage(immichAsset, requestConfig.UseOriginalImage, requestID, deviceID, isPrefetch)
 	}
 
@@ -301,19 +305,28 @@ func processVideo(immichAsset *immich.Asset, requestConfig config.Config, reques
 	// We need to see if the video has been downloaded
 	// if so, return nil
 	// if it hasn't been downloaded, download it and return a image
+	videoID := ""
+	if immichAsset.Type == immich.VideoType {
+		videoID = immichAsset.ID
+	} else {
+		videoID = immichAsset.LivePhotoVideoID
+	}
 
 	// Video is available
-	if VideoManager.IsDownloaded(immichAsset.ID) {
+	if VideoManager.IsDownloaded(videoID) {
 		return fetchImagePreview(immichAsset, requestConfig.UseOriginalImage, requestID, deviceID, isPrefetch)
 	}
 
 	//  video is not available, is video downloading?
-	if !VideoManager.IsDownloading(immichAsset.ID) {
+	if !VideoManager.IsDownloading(videoID) {
 		go VideoManager.DownloadVideo(*immichAsset, requestConfig, deviceID, requestURL)
 	}
 
-	// if the video is not available, run processAsset again to get a new asset
-	return processAsset(immichAsset, immich.AllAssetTypes, requestConfig, requestID, deviceID, requestURL, isPrefetch)
+	if immichAsset.Type == immich.VideoType {
+		// if the video is not available, run processAsset again to get a new asset
+		return processAsset(immichAsset, immich.AllAssetTypes, requestConfig, requestID, deviceID, requestURL, isPrefetch)
+	}
+	return processImage(immichAsset, requestConfig.UseOriginalImage, requestID, deviceID, isPrefetch)
 }
 
 // processImage prepares an image asset for display by setting its source type and retrieving a preview
@@ -625,7 +638,7 @@ func renderCachedViewData(c echo.Context, cachedViewData []common.ViewData, requ
 	utils.TrimHistory(&requestConfig.History, kiosk.HistoryLimit)
 	viewDataToRender.History = requestConfig.History
 
-	if requestConfig.ExperimentalAlbumVideo && viewDataToRender.Assets[0].ImmichAsset.Type == immich.VideoType {
+	if viewDataToRender.Assets[0].ImmichAsset.LivePhotoVideoID != "" || (requestConfig.ExperimentalAlbumVideo && viewDataToRender.Assets[0].ImmichAsset.Type == immich.VideoType) {
 		return Render(c, http.StatusOK, videoComponent.Video(viewDataToRender, secret))
 	}
 

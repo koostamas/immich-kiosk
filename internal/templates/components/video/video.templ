@@ -6,6 +6,7 @@ import (
 	"github.com/damongolding/immich-kiosk/internal/kiosk"
 	"github.com/damongolding/immich-kiosk/internal/templates/partials"
 	"github.com/damongolding/immich-kiosk/internal/utils"
+	"github.com/damongolding/immich-kiosk/internal/immich"
 	"github.com/google/uuid"
 )
 
@@ -17,6 +18,14 @@ script videoHandler(id string) {
 templ Video(viewData common.ViewData, secret string) {
 	{{ ID := uuid.New().String() }}
 	{{ video := viewData.Assets[0] }}
+	{{
+		videoID := ""
+		if video.ImmichAsset.Type == immich.VideoType {
+			videoID = video.ImmichAsset.ID
+		} else {
+			videoID = video.ImmichAsset.LivePhotoVideoID
+		}
+	}}
 	{{
 		videoOrientation := kiosk.LandscapeOrientation
 		if video.ImmichAsset.IsPortrait {
@@ -39,7 +48,7 @@ templ Video(viewData common.ViewData, secret string) {
 				poster={ video.ImageData }
 			>
 				<source
-					src={ fmt.Sprintf("/video/%s", video.ImmichAsset.ID) }
+					src={ fmt.Sprintf("/video/%s", videoID) }
 				/>
 			</video>
 		</div>
